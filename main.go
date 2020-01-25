@@ -28,11 +28,9 @@ func ip_address_in_slice(ip_address string, ips []string) bool {
 	//find a string in slice return boolean
 	for _, val := range ips {
 		if val == ip_address {
-			fmt.Printf("True")
 			return true
 		}
 	}
-	fmt.Printf("False")
 	return false
 }
 
@@ -65,6 +63,7 @@ func main() {
 			os.Exit(1)
 		}
 		defer resp.Body.Close()
+
 		contents, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			fmt.Printf("%s", err)
@@ -74,7 +73,10 @@ func main() {
 		ip_addresses := match_ip(string(contents))
 
 		for _, value := range ip_addresses {
-			processed_ips = append(processed_ips, value)
+			exists := ip_address_in_slice(value, processed_ips)
+			if exists == false {
+				processed_ips = append(processed_ips, value)
+			}
 		}
 	}
 
