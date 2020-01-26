@@ -52,23 +52,29 @@ func url_prefix(url string) string {
 	return prefix_url
 }
 
+func download_url(prefix_url string) []byte {
+	resp, err := http.Get(prefix_url)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	}
+	return contents
+}
+
 func main() {
 	processed_ips := make([]string, 0)
 
 	for _, url := range blacklist_urls {
 		prefix_url := url_prefix(url)
-		resp, err := http.Get(prefix_url)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
-			os.Exit(1)
-		}
-		defer resp.Body.Close()
 
-		contents, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("%s", err)
-			os.Exit(1)
-		}
+		contents := download_url(prefix_url)
 
 		ip_addresses := match_ip(string(contents))
 
