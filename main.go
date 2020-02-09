@@ -69,7 +69,10 @@ func download_url(prefix_url string) []byte {
 }
 
 func main() {
+
 	processed_ips := make([]string, 0)
+
+	url_channel := make(chan byte)
 
 	for _, url := range blacklist_urls {
 		prefix_url := url_prefix(url)
