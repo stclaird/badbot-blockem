@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -52,8 +53,11 @@ func url_prefix(url string) string {
 	return prefix_url
 }
 
-func download_url(prefix_url string) []byte {
-	resp, err := http.Get(prefix_url)
+func download_url(url string, url_channel chan<- []byte) {
+	//download the URL and send the contents back dwn the channel
+	txt := fmt.Sprintf("Downloading %s", url)
+	fmt.Println(txt)
+	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
 		os.Exit(1)
@@ -65,22 +69,22 @@ func download_url(prefix_url string) []byte {
 		fmt.Printf("%s", err)
 		os.Exit(1)
 	}
-	return contents
+
+	url_channel <- contents
+
 }
 
 func main() {
+	ipaddress_file_out := flag.String("fileout", "ip-blacklist.txt", "A list of IP addresses")
+	flag.Parse()
 
 	processed_ips := make([]string, 0)
-
-	url_channel := make(chan byte)
+	url_channel := make(chan []byte)
 
 	for _, url := range blacklist_urls {
 		prefix_url := url_prefix(url)
-
-		contents := download_url(prefix_url)
-
-		ip_addresses := match_ip(string(contents))
-
+		go download_url(prefix_url, url_channel)
+		ip_addresses := match_ip(string(<-url_channel))
 		for _, value := range ip_addresses {
 			exists := ip_address_in_slice(value, processed_ips)
 			if exists == false {
@@ -92,6 +96,27 @@ func main() {
 	fmt.Printf("Processed")
 	for _, value := range processed_ips {
 		fmt.Printf("%s\n", value)
+	}
+	//open a file and output the addresses.
+	file_handle, err := os.Create(*ipaddress_file_out)
+	if err != nil {
+		fmt.Println(err)
+		file_handle.Close()
+		return
+	}
+	//write the addresses
+	for _, value := range processed_ips {
+		fmt.Fprintln(file_handle, value)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+	//close the file
+	cat := file_handle.Close()
+	if cat != nil {
+		fmt.Println(err)
+		return
 	}
 
 }
