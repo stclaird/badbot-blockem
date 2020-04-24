@@ -30,7 +30,7 @@ If you want to output to a different, and perhaps more professional sounding fil
 ./blockem -fileout <some-file.txt>
 ```
 
-In the likely event that you will want to provide your own comma seperated file containing a list of blacklist URLs. Then we have you covered, you just need to specify the blacklist_urls flag:
+In the likely event that you will want to provide your own comma seperated file containing a list of blacklist URLs. Then blockem has you covered, you just need to specify the blacklist_urls flag:
 ```bash
 ./blockem -blacklist_urls blacklist_urls_file_in.txt
 ```
