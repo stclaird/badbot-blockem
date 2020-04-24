@@ -4,7 +4,7 @@ Blockem is a simple tool written in GoLang for slurping Internet IP address blac
 
 ## Installation 'n Compile
 
-It is fairly easy to install, you just need a GoLang compiler on your machine and have the this repo checked out to your machine. 
+It is fairly easy to install, you just need a GoLang compiler installed and have the this repo checked out to your machine. 
 From there you compile the source go code into an executable.
 
 ```bash
