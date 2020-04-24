@@ -4,7 +4,7 @@ Blockem is a simple tool written in GoLang for slurping Internet IP address blac
 
 ## Installation 'n Compile
 
-It is fairly easy to install, you just need a GoLang compiler on your machine and have the this repo checked out to your machine. 
+It is fairly easy to install, you just need a GoLang compiler installed and have the this repo checked out to your machine. 
 From there you compile the source go code into an executable.
 
 ```bash
@@ -30,7 +30,7 @@ If you want to output to a different, and perhaps more professional sounding fil
 ./blockem -fileout <some-file.txt>
 ```
 
-In the likely event that you will want to provide your own comma seperated file containing a list of blacklist URLs. Then we have you covered:
+In the likely event that you will want to provide your own comma seperated file containing a list of blacklist URLs. Then we have you covered, you just need to specify the blacklist_urls flag:
 ```bash
 ./blockem -blacklist_urls blacklist_urls_file_in.txt
 ```
