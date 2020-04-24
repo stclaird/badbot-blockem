@@ -1,0 +1,4 @@
+raw.githubusercontent.com/ktsaou/blocklist-ipsets/master/firehol_level1.netset
+lists.blocklist.de/lists/all.txt
+https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt
+http://cinsscore.com/list/ci-badguys.txt

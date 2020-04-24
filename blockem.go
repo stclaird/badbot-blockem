@@ -11,11 +11,23 @@ import (
 	"strings"
 )
 
-var blacklist_urls = []string{
-	"raw.githubusercontent.com/ktsaou/blocklist-ipsets/master/firehol_level1.netset",
-	"lists.blocklist.de/lists/all.txt",
-	"https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt",
-	"http://cinsscore.com/list/ci-badguys.txt",
+func download_url(url string, url_channel chan<- []byte) {
+	//download the URL and send the contents back dwn the channel
+	txt := fmt.Sprintf("Downloading %s", url)
+	fmt.Println(txt)
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("%s", err)
+		os.Exit(1)
+	}
+	url_channel <- contents
 }
 
 func match_ip(pattern string) []string {
@@ -36,7 +48,7 @@ func ip_address_in_slice(ip_address string, ips []string) bool {
 }
 
 func url_prefix(url string) string {
-	//prepend an appropriate http protocol if url doesn't have one
+	//prepend an appropriate http protocol if url doesn't have one defined
 	is_http := strings.HasPrefix(url, "http://")
 	is_https := strings.HasPrefix(url, "https://")
 	prefix_url := ""
@@ -53,30 +65,32 @@ func url_prefix(url string) string {
 	return prefix_url
 }
 
-func download_url(url string, url_channel chan<- []byte) {
-	//download the URL and send the contents back dwn the channel
-	txt := fmt.Sprintf("Downloading %s", url)
-	fmt.Println(txt)
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
-		os.Exit(1)
-	}
-	defer resp.Body.Close()
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("%s", err)
-		os.Exit(1)
-	}
-
-	url_channel <- contents
-
+var blacklist_urls_default = []string{
+	"raw.githubusercontent.com/ktsaou/blocklist-ipsets/master/firehol_level1.netset",
+	"lists.blocklist.de/lists/all.txt",
+	"https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt",
+	"http://cinsscore.com/list/ci-badguys.txt",
 }
 
 func main() {
-	ipaddress_file_out := flag.String("fileout", "ip-blacklist.txt", "A list of IP addresses")
+	ipaddress_file_out := flag.String("fileout", "badbots-blockem-ip-list.out", "Outfile for processed ip addresses")
+	blacklist_urls_file_in := flag.String("blacklist_urls", "NotSet", "Input file containing comma seperated URLs")
 	flag.Parse()
+
+	var blacklist_urls = make([]string, 0)
+
+	if *blacklist_urls_file_in == "NotSet" {
+		blacklist_urls = blacklist_urls_default
+	} else {
+
+		file_bytes, err := ioutil.ReadFile(*blacklist_urls_file_in)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		blacklist_urls = strings.Split(string(file_bytes), "\n")
+	}
 
 	processed_ips := make([]string, 0)
 	url_channel := make(chan []byte)
@@ -113,8 +127,8 @@ func main() {
 		}
 	}
 	//close the file
-	cat := file_handle.Close()
-	if cat != nil {
+	file_err := file_handle.Close()
+	if file_err != nil {
 		fmt.Println(err)
 		return
 	}
