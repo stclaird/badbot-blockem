@@ -10,7 +10,7 @@ From there you compile the source go code into an executable.
 ```bash
 go build blockem.go
 ```
-Which if all goes to plan will output a executable called blockem
+Which, if all goes to plan will output a executable called blockem
 
 ## Usage
 Make sure the executable is executable by setting the executable bit before executing.
