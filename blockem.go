@@ -12,7 +12,7 @@ import (
 )
 
 func download_url(url string, url_channel chan<- []byte) {
-	//download the URL and send the contents back dwn the channel
+	//download the URL and send the contents back down the channel
 	txt := fmt.Sprintf("Downloading %s", url)
 	fmt.Println(txt)
 	resp, err := http.Get(url)
