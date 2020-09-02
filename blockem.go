@@ -9,26 +9,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"net"
 )
-
-func download_url(url string, url_channel chan<- []byte) {
-	//download the URL and send the contents back down the channel
-	txt := fmt.Sprintf("Downloading %s", url)
-	fmt.Println(txt)
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
-		os.Exit(1)
-	}
-	defer resp.Body.Close()
-
-	contents, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("%s", err)
-		os.Exit(1)
-	}
-	url_channel <- contents
-}
 
 func match_ip(pattern string) []string {
 	//match ip addresses from string pattern and return slice of ips as string
@@ -65,9 +47,60 @@ func url_prefix(url string) string {
 	return prefix_url
 }
 
+
+func download_url(url string, url_channel chan<- []byte) {
+	//download the URL and send the contents back down the channel
+	txt := fmt.Sprintf("Downloading %s", url)
+	fmt.Println(txt)
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "fetch: %v\n", err)
+
+	}
+	defer resp.Body.Close()
+
+	contents, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("%s", err)
+	}
+	url_channel <- contents
+}
+
+
+func create_processed_ip_slice( blacklist_urls []string ) []string {
+
+	processed_ips := make([]string, 0)
+	url_channel := make(chan []byte)
+
+	for _, url := range blacklist_urls {
+		prefix_url := url_prefix(url)
+		go download_url(prefix_url, url_channel)
+
+
+		ip_addresses := match_ip(string(<-url_channel))
+		for _, value := range ip_addresses {
+			//Make sure we don't have this address already and that it is a parse-able IP address
+			exists := ip_address_in_slice(value, processed_ips)
+			if exists == false {
+				fmt.Printf("Testing: %s\n", value)
+				parse := net.ParseIP(value)
+				if parse != nil {
+					fmt.Printf("Valid: %s\n", value)
+					processed_ips = append(processed_ips, value)
+				} else {
+					fmt.Printf("%s Not Valid\n", value)
+				}
+			}
+		}
+
+
+	}
+
+	return processed_ips
+}
+
 var blacklist_urls_default = []string{
 	"raw.githubusercontent.com/ktsaou/blocklist-ipsets/master/firehol_level1.netset",
-	"lists.blocklist.de/lists/all.txt",
 	"https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt",
 	"http://cinsscore.com/list/ci-badguys.txt",
 }
@@ -92,25 +125,9 @@ func main() {
 		blacklist_urls = strings.Split(string(file_bytes), "\n")
 	}
 
-	processed_ips := make([]string, 0)
-	url_channel := make(chan []byte)
+	processed_ips := create_processed_ip_slice(blacklist_urls)
 
-	for _, url := range blacklist_urls {
-		prefix_url := url_prefix(url)
-		go download_url(prefix_url, url_channel)
-		ip_addresses := match_ip(string(<-url_channel))
-		for _, value := range ip_addresses {
-			exists := ip_address_in_slice(value, processed_ips)
-			if exists == false {
-				processed_ips = append(processed_ips, value)
-			}
-		}
-	}
 
-	fmt.Printf("Processed")
-	for _, value := range processed_ips {
-		fmt.Printf("%s\n", value)
-	}
 	//open a file and output the addresses.
 	file_handle, err := os.Create(*ipaddress_file_out)
 	if err != nil {
