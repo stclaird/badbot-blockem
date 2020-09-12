@@ -5,11 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
-	"net"
 )
 
 func match_ip(pattern string) []string {
@@ -47,7 +47,6 @@ func url_prefix(url string) string {
 	return prefix_url
 }
 
-
 func download_url(url string, url_channel chan []byte) {
 	//download the URL and send the contents back down the channel
 	txt := fmt.Sprintf("Downloading %s", url)
@@ -66,8 +65,7 @@ func download_url(url string, url_channel chan []byte) {
 	url_channel <- contents
 }
 
-
-func create_processed_ip_slice( blacklist_urls []string ) []string {
+func create_processed_ip_slice(blacklist_urls []string) []string {
 
 	processed_ips := make([]string, 0)
 	url_channel := make(chan []byte)
@@ -75,7 +73,6 @@ func create_processed_ip_slice( blacklist_urls []string ) []string {
 	for _, url := range blacklist_urls {
 		prefix_url := url_prefix(url)
 		go download_url(prefix_url, url_channel)
-
 
 		ip_addresses := match_ip(string(<-url_channel))
 		for _, value := range ip_addresses {
@@ -92,7 +89,6 @@ func create_processed_ip_slice( blacklist_urls []string ) []string {
 				}
 			}
 		}
-
 
 	}
 
@@ -126,7 +122,6 @@ func main() {
 	}
 
 	processed_ips := create_processed_ip_slice(blacklist_urls)
-
 
 	//open a file and output the addresses.
 	file_handle, err := os.Create(*ipaddress_file_out)
